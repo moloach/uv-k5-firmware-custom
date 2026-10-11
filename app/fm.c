@@ -36,7 +36,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 #endif
 
-uint16_t          gFM_Channels[20];
+uint16_t          gFM_Channels[FM_CHANNEL_COUNT];
 bool              gFmRadioMode;
 uint8_t           gFmRadioCountdown_500ms;
 volatile uint16_t gFmPlayCountdown_10ms;
@@ -118,14 +118,42 @@ void FM_TurnOff(void)
     gUpdateStatus  = true;
 }
 
-void FM_EraseChannels(void)
+// transfers the preset channels to/from the EEPROM
+// pChannels == NULL erases the given block, Count must be a multiple of 2
+static void FM_EepromTransfer(uint16_t Address, const uint16_t *pChannels, uint8_t Count)
 {
-    unsigned int i;
-    uint8_t      Template[8];
+    uint8_t i;
+    uint8_t Template[8];
 
     memset(Template, 0xFF, sizeof(Template));
-    for (i = 0; i < 5; i++)
-        EEPROM_WriteBuffer(0x0E40 + (i * 8), Template,8);
+
+    for (i = 0; i < Count; i += 4)
+    {
+        const uint8_t Size = ((uint8_t)(Count - i) >= 4) ? 8 : (uint8_t)((Count - i) * 2);
+
+        if (pChannels)
+            EEPROM_WriteBuffer(Address + (i * 2), &pChannels[i], Size);
+        else
+            EEPROM_WriteBuffer(Address + (i * 2), Template, Size);
+    }
+}
+
+void FM_LoadChannels(void)
+{
+    EEPROM_ReadBuffer(FM_EEPROM_BLOCK0_ADDR, &gFM_Channels[0], FM_EEPROM_BLOCK0_COUNT * 2);
+    EEPROM_ReadBuffer(FM_EEPROM_BLOCK1_ADDR, &gFM_Channels[FM_EEPROM_BLOCK0_COUNT], FM_EEPROM_BLOCK1_COUNT * 2);
+}
+
+void FM_SaveChannels(void)
+{
+    FM_EepromTransfer(FM_EEPROM_BLOCK0_ADDR, &gFM_Channels[0], FM_EEPROM_BLOCK0_COUNT);
+    FM_EepromTransfer(FM_EEPROM_BLOCK1_ADDR, &gFM_Channels[FM_EEPROM_BLOCK0_COUNT], FM_EEPROM_BLOCK1_COUNT);
+}
+
+void FM_EraseChannels(void)
+{
+    FM_EepromTransfer(FM_EEPROM_BLOCK0_ADDR, NULL, FM_EEPROM_BLOCK0_COUNT);
+    FM_EepromTransfer(FM_EEPROM_BLOCK1_ADDR, NULL, FM_EEPROM_BLOCK1_COUNT);
 
     memset(gFM_Channels, 0xFF, sizeof(gFM_Channels));
 }
@@ -304,7 +332,7 @@ static void Key_DIGITS(KEY_Code_t Key, uint8_t state)
                         return;
                     }
                 }
-                else if (Channel < 20) {
+                else if (Channel < FM_CHANNEL_COUNT) {
 #ifdef ENABLE_VOICE
                     gAnotherVoiceID = (VOICE_ID_t)Key;
 #endif
@@ -490,7 +518,7 @@ static void Key_UP_DOWN(uint8_t state, int8_t Step)
 
     if (gAskToSave) {
         gRequestDisplayScreen = DISPLAY_FM;
-        gFM_ChannelPosition   = NUMBER_AddWithWraparound(gFM_ChannelPosition, Step, 0, 19);
+        gFM_ChannelPosition   = NUMBER_AddWithWraparound(gFM_ChannelPosition, Step, 0, FM_CHANNEL_COUNT - 1);
         return;
     }
 
@@ -598,10 +626,10 @@ void FM_Play(void)
             return;
         }
 
-        if (gFM_ChannelPosition < 20)
+        if (gFM_ChannelPosition < FM_CHANNEL_COUNT)
             gFM_Channels[gFM_ChannelPosition++] = gEeprom.FM_FrequencyPlaying;
 
-        if (gFM_ChannelPosition >= 20)
+        if (gFM_ChannelPosition >= FM_CHANNEL_COUNT)
         {
             FM_PlayAndUpdate();
             GUI_SelectNextDisplay(DISPLAY_FM);

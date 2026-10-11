@@ -24,12 +24,26 @@
 #define FM_CHANNEL_UP	0x01
 #define FM_CHANNEL_DOWN	0xFF
 
+// number of storable FM presets
+#define FM_CHANNEL_COUNT        50u
+
+// EEPROM layout of the preset frequencies (uint16, units of 10kHz):
+//   CH  1..20 -> 0x0E40..0x0E67, kept at the stock location so the radio
+//               stays compatible with the PC programming software
+//   CH 21..50 -> 0x02028..0x02063, the free gap between the welcome text
+//               block (ends at 0x02025) and the power-on picture (0x02080)
+//               nothing else in the firmware or the PC tools uses this area
+#define FM_EEPROM_BLOCK0_ADDR   0x0E40u
+#define FM_EEPROM_BLOCK0_COUNT  20u
+#define FM_EEPROM_BLOCK1_ADDR   0x02028u
+#define FM_EEPROM_BLOCK1_COUNT  (FM_CHANNEL_COUNT - FM_EEPROM_BLOCK0_COUNT)
+
 enum {
     FM_SCAN_OFF = 0U,
 };
 extern bool              FM_EXIT_FLAG;
 
-extern uint16_t          gFM_Channels[20];
+extern uint16_t          gFM_Channels[FM_CHANNEL_COUNT];
 extern bool              gFmRadioMode;
 extern uint8_t           gFmRadioCountdown_500ms;
 extern volatile uint16_t gFmPlayCountdown_10ms;
@@ -46,6 +60,8 @@ uint8_t FM_FindNextChannel(uint8_t Channel, uint8_t Direction);
 int     FM_ConfigureChannelState(void);
 void    FM_TurnOff(void);
 void    FM_EraseChannels(void);
+void    FM_LoadChannels(void);
+void    FM_SaveChannels(void);
 
 void    FM_Tune(uint16_t Frequency, int8_t Step, bool bFlag);
 void    FM_PlayAndUpdate(void);

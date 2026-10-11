@@ -106,8 +106,8 @@ void SETTINGS_InitEEPROM(void)
 		gEeprom.FM_IsMrMode        = (FM.IsMrMode < 2) ? FM.IsMrMode : false;
 	}
 
-	// 0E40..0E67
-	EEPROM_ReadBuffer(0x0E40, gFM_Channels, sizeof(gFM_Channels));
+	// 0E40..0E67 + 02028..02063
+	FM_LoadChannels();
 	FM_ConfigureChannelState();
 #endif
 
@@ -440,6 +440,15 @@ void SETTINGS_FactoryReset(bool bIsAll)
         }
     }
 
+#ifdef ENABLE_FMRADIO
+    if (bIsAll)
+    {
+        // the extended FM preset block (CH21..CH50) lives at 0x02028, outside
+        // the 0x0C80..0x1E00 range handled by the loop above
+        FM_EraseChannels();
+    }
+#endif
+
     if (bIsAll)
     {
         RADIO_InitInfo(gRxVfo, FREQ_CHANNEL_FIRST + BAND6_400MHz, 43350000);
@@ -459,8 +468,6 @@ void SETTINGS_FactoryReset(bool bIsAll)
 #ifdef ENABLE_FMRADIO
 void SETTINGS_SaveFM(void)
 	{
-		unsigned int i;
-
 		struct
 		{
 			uint16_t Frequency;
@@ -475,8 +482,8 @@ void SETTINGS_SaveFM(void)
 		State.IsChannelSelected = gEeprom.FM_IsMrMode;
 
 		EEPROM_WriteBuffer(0x0E88, &State,8);
-		for (i = 0; i < 5; i++)
-			EEPROM_WriteBuffer(0x0E40 + (i * 8), &gFM_Channels[i * 4],8);
+
+		FM_SaveChannels();
 	}
 #endif
 

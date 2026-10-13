@@ -33,31 +33,41 @@
 static void FM_DrawSignalInfo(void)
 {
     static uint8_t  smoothRssi;
+    static uint8_t  lastSnr;
     static uint16_t lastFreq;
-    uint8_t  rssi, snr;
     char     buf[20];
 
-    FM_GetSignalQuality(&rssi, &snr);
+    // only poll the BK1080 while scanning or shortly after a key press:
+    // continuous register reads can inject clicks into the FM audio
+    if (gFM_ScanState != FM_SCAN_OFF || gFM_RssiRefreshCountdown_500ms > 0) {
+        uint8_t rssi, snr;
 
-    if (gEeprom.FM_FrequencyPlaying != lastFreq) {
-        lastFreq    = gEeprom.FM_FrequencyPlaying;
-        smoothRssi  = rssi;
-    } else {
-        smoothRssi += (rssi - smoothRssi) / 2;
+        FM_GetSignalQuality(&rssi, &snr);
+        lastSnr = snr;
+
+        if (gEeprom.FM_FrequencyPlaying != lastFreq) {
+            lastFreq    = gEeprom.FM_FrequencyPlaying;
+            smoothRssi  = rssi;
+        } else {
+            smoothRssi += (rssi - smoothRssi) / 2;
+        }
     }
 
-    sprintf(buf, "RSSI %3u  SNR %2u", smoothRssi, snr);
+    sprintf(buf, "RSSI %3u  SNR %2u", smoothRssi, lastSnr);
     UI_PrintStringSmall(buf, 0, 127, 1);
 
     // bottom line: hollow bar frame, filled proportionally to the RSSI
+    // (kept well inside the visible glass area, the LCD has hidden columns)
+    const uint8_t barStart = 16;
+    const uint8_t barEnd   = 111;    // 96 pixels wide
     uint8_t *pLine = gFrameBuffer[6];
     memset(pLine, 0, 128);
-    for (uint8_t x = 2; x <= 125; x++)
+    for (uint8_t x = barStart; x <= barEnd; x++)
         pLine[x] = 0x81;
 
-    const uint8_t width = ((uint16_t) smoothRssi * 123) / 255;
+    const uint8_t width = ((uint16_t) smoothRssi * 96) / 255;
     for (uint8_t x = 0; x < width; x++)
-        pLine[2 + x] = 0xFF;
+        pLine[barStart + x] = 0xFF;
 }
 
 void UI_DisplayFM(void)

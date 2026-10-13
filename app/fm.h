@@ -49,6 +49,8 @@ extern uint8_t           gFmRadioCountdown_500ms;
 extern volatile uint16_t gFmPlayCountdown_10ms;
 extern volatile int8_t   gFM_ScanState;
 extern uint8_t           gFM_ChannelPosition;
+// counts down (500ms ticks) after a key press while FM RSSI info is refreshed
+extern uint8_t           gFM_RssiRefreshCountdown_500ms;
 // Doubts about          whether this should be signed or not
 extern uint16_t          gFM_FrequencyDeviation;
 extern bool              gFM_FoundFrequency;

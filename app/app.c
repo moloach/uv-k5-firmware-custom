@@ -1481,9 +1481,15 @@ void APP_TimeSlice500ms(void) {
 #endif
     }
 #ifdef ENABLE_FMRADIO
-    // keep the FM screen's signal strength info up to date
-    if (gFmRadioMode && gScreenToDisplay == DISPLAY_FM)
-        gUpdateDisplay = true;
+    // refresh the FM screen's signal strength info for a few seconds after
+    // key presses and while scanning, then freeze it - continuous BK1080
+    // register reads while idle listening inject clicks into the FM audio
+    if (gFmRadioMode && gScreenToDisplay == DISPLAY_FM) {
+        if (gFM_RssiRefreshCountdown_500ms > 0)
+            gFM_RssiRefreshCountdown_500ms--;
+        if (gFM_ScanState != FM_SCAN_OFF || gFM_RssiRefreshCountdown_500ms > 0)
+            gUpdateDisplay = true;
+    }
 #endif
     BATTERY_TimeSlice500ms();
     SCANNER_TimeSlice500ms();

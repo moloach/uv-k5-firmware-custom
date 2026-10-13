@@ -37,6 +37,7 @@
 #endif
 
 uint16_t          gFM_Channels[FM_CHANNEL_COUNT];
+uint8_t           gFM_RssiRefreshCountdown_500ms;
 bool              gFmRadioMode;
 uint8_t           gFmRadioCountdown_500ms;
 volatile uint16_t gFmPlayCountdown_10ms;
@@ -576,6 +577,9 @@ void FM_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld)
 {
     uint8_t state = bKeyPressed + 2 * bKeyHeld;
 
+    if (bKeyPressed)
+        gFM_RssiRefreshCountdown_500ms = 6;   // ~3s of live RSSI after a key press
+
     switch (Key)
     {
         case KEY_0:
@@ -662,6 +666,7 @@ void FM_Start(void)
     gFmRadioMode              = true;
     gFM_ScanState             = FM_SCAN_OFF;
     gFM_RestoreCountdown_10ms = 0;
+    gFM_RssiRefreshCountdown_500ms = 4;       // ~2s of live RSSI after entering FM
 
     BK1080_Init(gEeprom.FM_FrequencyPlaying, true);
 

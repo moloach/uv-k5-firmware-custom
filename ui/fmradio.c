@@ -28,11 +28,44 @@
 #include "ui/inputbox.h"
 #include "ui/ui.h"
 #include "chinese.h"
+
+// signal strength info: row 1 = RSSI/SNR text, last row = level bar
+static void FM_DrawSignalInfo(void)
+{
+    static uint8_t  smoothRssi;
+    static uint16_t lastFreq;
+    uint8_t  rssi, snr;
+    char     buf[20];
+
+    FM_GetSignalQuality(&rssi, &snr);
+
+    if (gEeprom.FM_FrequencyPlaying != lastFreq) {
+        lastFreq    = gEeprom.FM_FrequencyPlaying;
+        smoothRssi  = rssi;
+    } else {
+        smoothRssi += (rssi - smoothRssi) / 2;
+    }
+
+    sprintf(buf, "RSSI %3u  SNR %2u", smoothRssi, snr);
+    UI_PrintStringSmall(buf, 0, 127, 1);
+
+    // bottom line: hollow bar frame, filled proportionally to the RSSI
+    uint8_t *pLine = gFrameBuffer[6];
+    memset(pLine, 0, 128);
+    for (uint8_t x = 2; x <= 125; x++)
+        pLine[x] = 0x81;
+
+    const uint8_t width = ((uint16_t) smoothRssi * 123) / 255;
+    for (uint8_t x = 0; x < width; x++)
+        pLine[2 + x] = 0xFF;
+}
+
 void UI_DisplayFM(void)
 {
     char String[16] = {0};
     char *pPrintStr = String;
 UI_DisplayClear();
+    FM_DrawSignalInfo();
     UI_PrintStringSmall("FM", 0, 127, 0);
 
     if (gAskToSave) {

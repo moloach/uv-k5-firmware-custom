@@ -199,3 +199,9 @@ void BK1080_GetFrequencyDeviation(uint16_t Frequency) {
     BK1080_BaseFrequency = Frequency;
     BK1080_FrequencyDeviation = BK1080_ReadRegister(BK1080_REG_07) / 16;
 }
+
+// RSSI = 8 bit raw value (0..255), SNR = 4 bit raw value (0..15)
+void BK1080_GetSignalQuality(uint8_t *pRssi, uint8_t *pSnr) {
+    *pRssi = BK1080_ReadRegister(BK1080_REG_10) & 0xFF;
+    *pSnr = BK1080_ReadRegister(BK1080_REG_07) & 0x0F;
+}

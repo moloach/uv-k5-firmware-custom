@@ -66,6 +66,7 @@ void    FM_SaveChannels(void);
 void    FM_Tune(uint16_t Frequency, int8_t Step, bool bFlag);
 void    FM_PlayAndUpdate(void);
 int     FM_CheckFrequencyLock(uint16_t Frequency, uint16_t LowerLimit);
+void    FM_GetSignalQuality(uint8_t *pRssi, uint8_t *pSnr);
 
 void    FM_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld);
 

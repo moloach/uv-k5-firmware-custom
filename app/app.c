@@ -1480,6 +1480,11 @@ void APP_TimeSlice500ms(void) {
         }
 #endif
     }
+#ifdef ENABLE_FMRADIO
+    // keep the FM screen's signal strength info up to date
+    if (gFmRadioMode && gScreenToDisplay == DISPLAY_FM)
+        gUpdateDisplay = true;
+#endif
     BATTERY_TimeSlice500ms();
     SCANNER_TimeSlice500ms();
     UI_MAIN_TimeSlice500ms();

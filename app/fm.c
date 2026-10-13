@@ -256,6 +256,17 @@ Bail:
     return ret;
 }
 
+void FM_GetSignalQuality(uint8_t *pRssi, uint8_t *pSnr)
+{
+    if (!gFmRadioMode) {
+        *pRssi = 0;
+        *pSnr  = 0;
+        return;
+    }
+
+    BK1080_GetSignalQuality(pRssi, pSnr);
+}
+
 static void Key_DIGITS(KEY_Code_t Key, uint8_t state)
 {
     enum { STATE_FREQ_MODE, STATE_MR_MODE, STATE_SAVE };

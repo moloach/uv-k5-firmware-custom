@@ -68,6 +68,10 @@ static void FM_DrawSignalInfo(void)
     const uint8_t width = ((uint16_t) smoothRssi * 96) / 255;
     for (uint8_t x = 0; x < width; x++)
         pLine[barStart + x] = 0xFF;
+
+    // close both ends of the frame with a full height column
+    pLine[barStart] = 0xFF;
+    pLine[barEnd]   = 0xFF;
 }
 
 void UI_DisplayFM(void)

@@ -23,8 +23,8 @@ jobs: #定义工作流程
       - name: Checkout #拉取代码
         uses: actions/checkout@v4 #使用 GitHub Actions 提供的 checkout 动作
 
-      - name: safe.directory #设置 git 的 safe.directory 配置
-        run: git config --global --add safe.directory /__w/uv-k5-firmware-custom/uv-k5-firmware-custom
+      #- name: safe.directory #设置 git 的 safe.directory 配置
+      #  run: git config --global --add safe.directory /__w/uv-k5-firmware-custom/uv-k5-firmware-custom
 
       - name: Generate #生成固件
         run: |

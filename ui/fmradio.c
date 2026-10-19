@@ -29,27 +29,28 @@
 #include "ui/ui.h"
 #include "chinese.h"
 
-// signal strength info: row 1 = RSSI/SNR text, last row = level bar
+// signal strength info: row 1 = RSSI/SNR text, last row = level bar,
+// title row (right side) = stereo / AFC deviation / railed flags
 static void FM_DrawSignalInfo(void)
 {
+    static BK1080_Signal_t lastSignal;      // frozen while not refreshing
     static uint8_t  smoothRssi;
-    static uint8_t  lastSnr;
     static uint16_t lastFreq;
-    char     buf[20];
+    char     buf[24];
 
     // only poll the BK1080 while scanning or shortly after a key press:
     // continuous register reads can inject clicks into the FM audio
     if (gFM_ScanState != FM_SCAN_OFF || gFM_RssiRefreshCountdown_500ms > 0) {
-        uint8_t rssi, snr;
+        BK1080_Signal_t signal;
 
-        FM_GetSignalQuality(&rssi, &snr);
-        lastSnr = snr;
+        FM_GetSignalQuality(&signal);
+        lastSignal = signal;
 
         if (gEeprom.FM_FrequencyPlaying != lastFreq) {
             lastFreq    = gEeprom.FM_FrequencyPlaying;
-            smoothRssi  = rssi;
+            smoothRssi  = signal.rssi;
         } else {
-            smoothRssi += (rssi - smoothRssi) / 2;
+            smoothRssi += (signal.rssi - smoothRssi) / 2;
         }
     }
 
@@ -59,8 +60,19 @@ static void FM_DrawSignalInfo(void)
     if (dbuv > 75)
         dbuv = 75;
 
-    sprintf(buf, "RSSI %3udB SNR %2u", dbuv, lastSnr);
+    sprintf(buf, "RSSI %3udB SNR %2u", dbuv, lastSignal.snr);
     UI_PrintStringSmall(buf, 0, 127, 1);
+
+    // title row, right aligned: stereo flag + signed AFC deviation + railed flag
+    sprintf(buf, "%s%+d%s",
+            lastSignal.stereo ? "ST" : "",
+            lastSignal.freqDeviation,
+            lastSignal.afcRailed ? "R" : "");
+    {
+        const unsigned int width = strlen(buf) * 7;  // small font: 7 px per char
+        const uint8_t start = (width < 126) ? (126 - width) : 0;
+        UI_PrintStringSmall(buf, start, 127, 0);
+    }
 
     // bottom line: hollow bar frame, filled proportionally to the RSSI
     // (kept well inside the visible glass area, the LCD has hidden columns)

@@ -24,13 +24,22 @@
 extern uint16_t BK1080_BaseFrequency;
 extern uint16_t BK1080_FrequencyDeviation;
 
+// live signal quality, read from REG_07 + REG_10 in a single call
+typedef struct {
+	uint8_t rssi;           // 0..255, units of dBuV (saturates ~75 per datasheet)
+	uint8_t snr;            // 0..15
+	int16_t freqDeviation;  // signed 12 bit FREQD, AFC deviation from center
+	bool    stereo;         // stereo indicator (ST bit)
+	bool    afcRailed;      // AFC hit its rail, lost lock (AFCRL bit)
+} BK1080_Signal_t;
+
 void BK1080_Init(uint16_t Frequency, bool bDoScan);
 uint16_t BK1080_ReadRegister(BK1080_Register_t Register);
 void BK1080_WriteRegister(BK1080_Register_t Register, uint16_t Value);
 void BK1080_Mute(bool Mute);
 void BK1080_SetFrequency(uint16_t Frequency);
 void BK1080_GetFrequencyDeviation(uint16_t Frequency);
-void BK1080_GetSignalQuality(uint8_t *pRssi, uint8_t *pSnr);
+void BK1080_GetSignalQuality(BK1080_Signal_t *pSignal);
 
 #endif
 

@@ -200,8 +200,19 @@ void BK1080_GetFrequencyDeviation(uint16_t Frequency) {
     BK1080_FrequencyDeviation = BK1080_ReadRegister(BK1080_REG_07) / 16;
 }
 
-// RSSI = 8 bit raw value (0..255), SNR = 4 bit raw value (0..15)
-void BK1080_GetSignalQuality(uint8_t *pRssi, uint8_t *pSnr) {
-    *pRssi = BK1080_ReadRegister(BK1080_REG_10) & 0xFF;
-    *pSnr = BK1080_ReadRegister(BK1080_REG_07) & 0x0F;
+// reads REG_07 + REG_10 once and decodes the live signal quality
+void BK1080_GetSignalQuality(BK1080_Signal_t *pSignal) {
+    const uint16_t reg07 = BK1080_ReadRegister(BK1080_REG_07);
+    const uint16_t reg10 = BK1080_ReadRegister(BK1080_REG_10);
+
+    // sign extend the 12 bit FREQD field (REG_07 bits 11:4)
+    int16_t deviation = (reg07 >> BK1080_REG_07_SHIFT_FREQD) & 0x0FFF;
+    if (deviation & 0x0800)
+        deviation -= 0x1000;
+
+    pSignal->rssi          = reg10 & 0xFF;
+    pSignal->snr           = reg07 & 0x0F;
+    pSignal->freqDeviation = deviation;
+    pSignal->stereo        = (reg10 & BK1080_REG_10_MASK_ST) != 0;
+    pSignal->afcRailed     = (reg10 & BK1080_REG_10_MASK_AFCRL) != 0;
 }

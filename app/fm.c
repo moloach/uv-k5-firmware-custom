@@ -257,15 +257,18 @@ Bail:
     return ret;
 }
 
-void FM_GetSignalQuality(uint8_t *pRssi, uint8_t *pSnr)
+void FM_GetSignalQuality(BK1080_Signal_t *pSignal)
 {
     if (!gFmRadioMode) {
-        *pRssi = 0;
-        *pSnr  = 0;
+        pSignal->rssi          = 0;
+        pSignal->snr           = 0;
+        pSignal->freqDeviation = 0;
+        pSignal->stereo        = false;
+        pSignal->afcRailed     = false;
         return;
     }
 
-    BK1080_GetSignalQuality(pRssi, pSnr);
+    BK1080_GetSignalQuality(pSignal);
 }
 
 static void Key_DIGITS(KEY_Code_t Key, uint8_t state)

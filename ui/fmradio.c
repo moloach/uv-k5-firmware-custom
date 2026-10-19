@@ -53,7 +53,13 @@ static void FM_DrawSignalInfo(void)
         }
     }
 
-    sprintf(buf, "RSSI %3u  SNR %2u", smoothRssi, lastSnr);
+    // BK1080 datasheet v2.7: RSSI is already in units of dBuV,
+    // 1 dB per LSB, saturating at approximately 75 dBuV
+    uint8_t dbuv = smoothRssi;
+    if (dbuv > 75)
+        dbuv = 75;
+
+    sprintf(buf, "RSSI %3udB SNR %2u", dbuv, lastSnr);
     UI_PrintStringSmall(buf, 0, 127, 1);
 
     // bottom line: hollow bar frame, filled proportionally to the RSSI
@@ -65,7 +71,8 @@ static void FM_DrawSignalInfo(void)
     for (uint8_t x = barStart; x <= barEnd; x++)
         pLine[x] = 0x81;
 
-    const uint8_t width = ((uint16_t) smoothRssi * 96) / 255;
+    // full scale = 75 dBuV (the datasheet saturation level)
+    const uint8_t width = ((uint16_t) dbuv * 96) / 75;
     for (uint8_t x = 0; x < width; x++)
         pLine[barStart + x] = 0xFF;
 
